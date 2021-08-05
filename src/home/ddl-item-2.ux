@@ -1,0 +1,129 @@
+<template>
+  <div class="item">
+    <div class="ddlRow">
+      <div class="circleArea" @click="showRowSwitch">
+        <div class="circle finished"></div>
+      </div>
+      <div class ="ddl-text" @click="callDetails">
+          <text class="content ddl-done">{{ddl.content}}</text>
+          <text class="deadline">{{ddl.deadline.date}} {{ddl.deadline.time}}</text> 
+      </div>
+    </div>
+    <div class="finishRow" show="{{showFinishRow}}">
+      <!-- <div class="completedImg" @click="setDoneDDL"></div> -->
+      <div class="removedImg" @click="removeDDL"></div>
+    </div>
+  </div>
+</template>
+
+<style lang="less">
+  /* 按钮 */
+  .btn {
+    border: 0px solid #000000;
+    border-radius: 10%;
+    /* padding: 20px,100px,20px,100px */
+  }
+  .item {
+    width: 100%;
+    flex-direction: column;
+  }
+  .ddlRow {
+    justify-content: flex-start;
+  }
+  .finishRow{
+    background-color: #dad8d8;
+    flex-direction: row;
+    justify-content: space-around;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    .completedImg{
+      .btn();
+      width: 64px;
+      height: 64px;
+      background-image: url(/common/select.png);
+    }
+    .removedImg{
+      .btn();
+      width: 64px;
+      height: 64px;
+      background-image: url(/common/delete.png);
+    }
+  }
+  /* 优先级与对应颜色 */
+  .circle {
+    margin: 50px;
+    width: 50px;
+    height: 50px;
+    border: 15px;
+    border-radius: 50%;
+    align-self: center;
+  }
+  .vital {
+    border-color:#f81e0f
+  }
+  .important{
+    border-color: #f8cb00
+  }
+  .normal {
+    border-color:#0cdf98
+  }
+  .casual {
+    border-color:#0cb5df
+  }
+  .finished{
+    border-color:#7a7979
+  }
+  /* text样式 */
+  .ddl-text{
+    flex-direction: row;
+    flex-grow: 1;
+    justify-content: space-between;
+
+    .content {
+      margin: 0,20px,0,auto;
+      font-size: 40px;
+    }
+    .deadline {
+      margin: 0,20px,0,auto;
+      font-size: 35px;
+    }
+  }
+
+  /*完成了的DDL划掉*/
+  .ddl-done {
+    text-decoration: line-through;
+  }
+  
+</style>
+
+<script>
+  // 本模块只负责显示 不负责存储和计算
+import prompt from '@system.prompt'
+
+export default {
+  // 分别是数据，位置下标idx,标记属于哪个List的type
+  props:["ddl","idx"],
+  data: {
+    type:2,
+    showFinishRow: false
+  },
+  
+  onInit(){
+  },
+ 
+  callDetails(){
+    this.$dispatch('callDetails', {idx: this.idx,type: this.type})
+      //通过dispatch向模态框返回了一堆所需的详情
+  },
+  showRowSwitch(){
+    this.showFinishRow=!this.showFinishRow;
+  },
+  removeDDL () {
+    this.$dispatch('removeDDL', { idx: this.idx,type: this.type})
+  },
+  showHint (msg) {
+    prompt.showToast({ message: msg })
+  },
+
+}
+</script>

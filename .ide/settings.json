@@ -1,0 +1,19 @@
+{
+  "hapsetting.apkConfig": {
+    "apkName": "默认版本",
+    "apkPath": "d:\\Quickapp\\resources\\app\\extensions\\hap-debugger\\toolkit\\quickapp-apk.zip",
+    "platform": {
+      "packageName": "org.hapjs.mockup",
+      "path": "quickapp_platform.apk",
+      "activity": ".activity.MainActivity",
+      "action": "android.intent.action.MAIN"
+    },
+    "debugger": {
+      "packageName": "org.hapjs.debugger",
+      "path": "quickapp_debugger.apk",
+      "activity": "org.hapjs.debugger.MainActivity",
+      "action": "org.hapjs.debugger.action.MAIN"
+    },
+    "apkDir": "C:\\Users\\11848\\AppData\\Roaming\\QuickAppIDE\\Apks\\quickapp-apk"
+  }
+}

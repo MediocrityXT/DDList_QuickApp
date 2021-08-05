@@ -1,0 +1,265 @@
+<template>
+  <div class="box modalAbove" show="{{showBox}}">
+      <div class="inputTextRow">
+        <input class="text" type="text" placeholder="What's your next DDL?"
+          value={{content}} @change="contentChange" onfocus="focusOnInput"/>
+        <div class="{{micStatus}}" @click="voiceSwitch"></div>
+      </div>
+
+      <div class="timeRow">
+        <picker type="date" class="date deadline" start=2021-01-01 end=2050-12-31 value="{{deadline.date}}" @change="dateChange">
+        <picker type="time" class="timePicker deadline" value="{{deadline.time}}" @change="timeChange"></picker>
+      </div>
+
+      <div class="scalesRow">
+        <text class='HintText' @click="test">Time Scale: </text>
+        <picker type="text" class="scalePicker" range="{{timeScaleRange}}" 
+          value="{{timeScale}}" @change="scaleChange"></picker>
+      </div>
+
+      <div class="confirmRow">
+        <text class="detailSet" @click="setDetail">Set Details</text>
+        <div class="confirmDDLImg" @click="sendDDL"></div>
+      </div>
+  </div>
+</template>
+
+
+<style lang="less">
+  .modalAbove {
+    z-index: 20;
+    flex-direction: column;
+    background-color: #ededed;
+  }
+  .box {
+    margin:0,auto,300px,auto;
+    position: fixed;
+    top: 350px;
+    left: 75px;
+    padding: 0,20px,0,20px;
+    border-radius: 50px;
+    height: 420px;
+    width: 600px;
+    
+    background-color: #ededed;
+    flex-direction: column;
+
+    .inputTextRow {
+    flex-direction: row;
+    height: 150px;
+    align-self: center;
+    justify-content: space-around;
+      .text{
+        margin: 0,auto
+      }
+      .micOff {
+      height: 65px;
+      width: 65px;
+      border-radius: 20%;
+      background-image: url('/common/mic.png');
+      align-self: center;
+      }
+      .micOn{
+        .micOff();
+        background-color: #888888;
+      }
+    }
+    .deadline {
+      font-size: 35px;
+    }
+    .timeRow{
+      justify-content: space-around;
+    }
+    .date {
+      margin-right: 10px;
+    }
+    .scalesRow {
+      flex-direction: row;
+      height: 150px;
+      justify-content: flex-start;
+
+      .HintText {
+        margin: 0,50px,0,50px;
+        justify-content: space-around;
+        color: #000000;
+      }
+      .scalePicker{
+        margin-left: 40px;
+        align-self: center;
+      }
+    }
+    .confirmRow{
+      flex-shrink: 1;
+      flex-direction: row;
+      justify-content: space-around;
+      border-top: 2px #000000;
+      border-style: dotted;
+      .detailSet{
+        font-weight: bold;
+      }
+      .confirmDDLImg {
+        height: 64px;
+        width: 64px;
+        align-self: center;
+        background-image: url('/common/select.png');
+      }
+    }
+    
+  }
+  .inputDate {
+    height: 150px;
+    align-self: center;
+  }
+  
+  ::placeholder {
+    color: #8d8a8a;
+  }
+  .addButtonImg {
+    height: 80px;
+    width: 80px;
+    align-self: center;
+    background-image: url('/common/plus.png');
+    margin-bottom: 5%;
+  }
+
+</style>
+
+<script>
+import prompt from '@system.prompt'
+
+export default {
+  props: [],
+  data:{
+    content: '',
+    deadline: {date:"",time:""},
+    timeScale: 'day',
+
+    timeScaleRange:["minute","hour","day","month"],
+    action:'',
+    showBox: false,
+    micStatus: 'micOff'
+  },
+  test(){
+    console.log(this.deadline)
+  },
+  // 绑定input获取输入value的函数
+  contentChange(e){
+    this.content = e.value
+  },
+  
+  // 绑定picker获取newValue的函数
+  scaleChange(e){
+    this.timeScale = e.newValue
+  },
+  dateChange(e){
+    var year = e.year.toString()
+    var mon = this.fillString(e.month+1)
+    var day = this.fillString(e.day)
+    this.deadline.date = year+"-"+mon+"-"+day
+  },
+  timeChange(e){
+    this.deadline.time = this.fillString(e.hour)+":"+this.fillString(e.minute)
+    console.log("timeChange",this.deadline)
+  },
+  
+  onInit() {
+    //默认显示此时
+    this.deadline.date = this.$app.$def.getDate()
+    this.deadline.time = this.$app.$def.getTime()
+    //监听是否显示box
+    this.$on('quickAddBox',(evt)=>{
+      const show = evt.detail.showQuickAddBox
+      this.showBox = show
+      if(show){
+        console.log("show the quickAddBox.")
+        this.show()
+      }else{
+        this.hide()
+      }
+    })
+  },
+  /**
+   * 没有我就自己定义的onShow和onHide
+   */
+  show() {
+    //在show时获取新的时间
+    this.deadline.date = this.$app.$def.getDate()
+    this.deadline.time = this.$app.$def.getTime()
+    this.$app.$def.init()
+  },
+  hide() {
+    //Hide时重置content
+    this.content='';
+    this.deadline.date = ''
+    this.deadline.time = ''
+    this.timeScale="day";
+    this.$app.$def.close()
+  },
+  
+  showHint (msg) {
+    prompt.showToast({ message: msg })
+  },
+  setDetail(){
+    // 需要sendDDL,那边接收之后直接呼起detailbox,modal不变
+    if(this.confirmDDL()){
+      this.$dispatch('setDetailsOfNewDDL', { 
+        content: this.content,
+        deadline: JSON.parse(JSON.stringify(this.deadline)),
+        timeScale: this.timeScale
+      });
+    }else{
+     this.showHint(`Please enter your DDL in the FUTURE`)
+    }
+  },
+  sendDDL () {
+    if(this.confirmDDL()){
+      // console.log("DDLtime:",this.deadline)
+      // 这里公用的deadline做为对象必须深拷贝传走,防止下一次使用时影响存到listData里的
+      this.$dispatch('sendNewDDL', {
+        content: this.content,
+        deadline: JSON.parse(JSON.stringify(this.deadline)),
+        timeScale: this.timeScale
+      });
+    }else{
+     this.showHint(`Please enter your DDL in the FUTURE`)
+    }
+  },
+  
+  //按下确认之后检查输入内容，新建DDL，关闭模态输入框 |详细设置=确认+打开详情页
+  confirmDDL(){
+    // console.log("confirm:",this.deadline.date)
+    if (this.content === '' ){// || !this.$app.$def.isFutureTime(this.deadline.date+" "+this.deadline.time)) { // 
+      return false
+    } else {
+      return true
+    }
+  },
+  
+  fillString(i){
+    var s = i.toString()
+    if(s.length==1){
+      s='0'+s
+    }
+    return s
+  },
+  voiceOn(){
+    this.micStatus = 'micOn'
+    this.$app.$def.start()
+  },
+  voiceOff(){
+    this.micStatus = 'micOff'
+    const temp = this.$app.$def.stop()
+    console.log(temp)
+    this.content = this.content + temp
+  },
+  voiceSwitch(){
+    if(this.micStatus =="micOn"){
+      this.voiceOff()
+    }else if (this.micStatus =="micOff"){
+      this.voiceOn()
+    }else{
+      console.log("mic Status error!")
+    }
+  },
+}
+</script>

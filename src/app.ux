@@ -1,0 +1,53 @@
+<script>
+import util from "./util/util.js"
+const moment = require("../node_modules/moment/moment.js")
+
+export default {
+  getDate(){
+    return moment().format('YYYY-MM-DD')
+  },
+  getTime(){
+    return moment().format('HH:mm')
+  },
+  getSecond(){
+    return moment().format('YYYY-MM-DD HH:mm:ss')
+  },
+  isFutureTime(time){
+    // 输入time也是date格式
+    return moment(time).isSameOrAfter(this.getDate()+" "+this.getTime())
+  },
+  nearDDL(deadline,timeScale){
+    var time = deadline.date+" "+deadline.time
+    var now = this.getDate()+" "+this.getTime()
+    var scale = timeScale+"s"
+    var soon = moment(now).add(1,scale)
+    return moment(soon).isAfter(time) && moment(time).isAfter(now)
+  },
+  AisBefore(a,b){
+    // a,b是列表元素{ddl}
+    var timeA = a.ddl.deadline.date+" "+a.ddl.deadline.time
+    var timeB = b.ddl.deadline.date+" "+b.ddl.deadline.time
+    console.log("timeA",timeA)
+    console.log("timeB",timeB)
+    var after = moment(timeB).isAfter(timeA)
+    if(after){
+      return -1
+    }else{
+      if(moment(timeB).isSame(timeA))
+        return 0
+      else
+        return 1
+    }
+  },
+  /**ASR的四个函数 */
+  init: util.init,
+  start: util.start,
+  stop: util.stop,
+  close: util.close
+
+  // init(){},
+  // start(){},
+  // stop(){},
+  // close(){}
+}
+</script>

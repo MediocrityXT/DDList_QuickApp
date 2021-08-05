@@ -1,0 +1,325 @@
+<template>
+  <div class="box modalAbove" show="{{showBox}}">
+      <div class="inputTextRow">
+        <input class="text" type="text" placeholder="What's your next DDL?" disabled="{{disabled}}"
+          value={{ddl.content}} @change="contentChange" onfocus="focusOnInput"/>
+        <div class="{{micStatus}}" @click="voiceSwitch" show="{{!disabled}}"></div>
+      </div>
+      
+      <div class="timeRow">
+        <picker type="date" class="date deadline" disabled="{{disabled}}" value="{{ddl.deadline.date}}" @change="dateChange_deadline"></picker>
+        <picker type="time" class="timePicker deadline" disabled="{{disabled}}" value="{{ddl.deadline.time}}" @change="timeChange_deadline"></picker>
+      </div>
+
+      <div class="scalesRow">
+        <text class='HintText'>Time Scale: </text>
+        <picker type="text" class="picker" disabled="{{disabled}}"
+          range="{{timeScaleRange}}" value="{{ddl.timeScale}}" @change="scaleChange"></picker>
+      </div>
+
+      <div class="row4">
+        <text class="HintText" >Priority: </text>
+        <picker type='text' class="picker" disabled="{{disabled}}" range="{{priorityRange}}" value="{{ddl.Priority}}" @change="priorityChange"></picker>
+      </div>
+      <div class="row5">
+        <text class="HintText" >Progress: </text>
+        <div class="sliderArea" @click="sliderSwitch">
+          <text class="sliderText">{{ddl.Progress}}</text>
+          <slider class="slider" value="{{ddl.Progress}}" disabled="{{disabled}}" @change="progressChange" min=0 max=10 ></slider>
+        </div>
+      </div>
+      <div class="row6">
+        <text class="HintText" >StartTime: </text>
+        <picker type="date" class="date" value="{{ddl.StartTime.date}}" @change="dateChange_StartTime" disabled="{{disabled}}"></picker>
+        <picker type="time" class="timePicker" value="{{ddl.StartTime.time}}" @change="timeChange_StartTime" disabled="{{disabled}}"></picker>
+      </div>
+      <div class="row7" show="{{disabled}}">
+        <text class="HintText" >DoneTime: </text>
+        <div>
+          <text class="date">{{ddl.DoneTime.date}}</text>
+          <text class="timePicker" >{{ddl.DoneTime.time}}</text>
+        </div>
+      </div>
+  </div>
+</template>
+
+
+<style lang="less">
+  .modalAbove {
+    z-index: 20;
+    flex-direction: column;
+    background-color: #ededed;
+  }
+  .box {
+    margin:0,auto,300px,auto;
+    position: fixed;
+    top: 350px;
+    left: 75px;
+    padding: 0,20px,0,20px;
+    border-radius: 50px;
+    height: 700px;
+    width: 600px;
+    
+    background-color: #ededed;
+    flex-direction: column;
+
+    .inputTextRow {
+      flex-direction: row;
+      height: 100px;
+      align-self: center;
+      justify-content: space-around;
+      padding: 10px,30px,0,30px;
+      .text{
+          margin: 0,auto
+        }
+        .micOff {
+        height: 80px;
+        width: 80px;
+        border-radius: 20%;
+        background-image: url('/common/mic.png');
+        align-self: center;
+        }
+        .micOn{
+          .micOff();
+          background-color: #888888;
+        }
+      
+    }
+    .deadline {
+      font-size: 35px;
+    }
+    .date {
+      margin-right: 10px;
+    }
+    .scalesRow {
+      flex-direction: row;
+      height: 100px;
+      justify-content: flex-start;
+      
+      .picker{
+        margin-left: 40px;
+        align-self: center;
+      }
+    }
+    .timeRow, .row4 ,.row5 ,.row6 ,.row7 {
+      justify-content: space-around;
+      height: 100px;
+    }
+    .sliderArea {
+      flex-direction: row;
+      
+      .sliderText {
+        font-style: italic;
+      }
+      .slider{
+        width: 250px;
+        height: 60px;
+      }
+    }
+    .HintText {
+        margin: 0,50px,0,50px;
+        justify-content: space-around;
+        color: #000000;
+      }
+    .confirmRow{
+      flex-grow: 1;
+      flex-direction: row;
+      justify-content: space-around;
+      border-top: 2px #000000;
+      border-style: dotted;
+      .detailSet{
+        font-weight: bold;
+      }
+      .confirmDDLImg {
+        height: 64px;
+        width: 64px;
+        align-self: center;
+        background-image: url('/common/select.png');
+      }
+    }
+    
+  }
+  .slider{
+    height: 80px;
+    width: 60%;
+    border-radius: 10px;
+    color: #888888;
+    selected-color: #77f346;
+    block-color: #161414;
+  }
+  .inputDate {
+    height: 100px;
+    align-self: center;
+  }
+  
+  ::placeholder {
+    color: #8d8a8a;
+  }
+  .addButtonImg {
+    height: 80px;
+    width: 80px;
+    align-self: center;
+    background-image: url('/common/plus.png');
+    margin-bottom: 5%;
+  }
+
+</style>
+
+<script>
+import prompt from '@system.prompt'
+
+export default {
+  props: [],
+  data:{
+    idx:'',
+    ddl:{
+      content:"",
+      deadline:{date:"",time:""},
+      timeScale: '',
+      time:'',
+      Priority:"",
+      StartTime:{},
+      repeatRule:"",
+      Progress:"",  
+      Order:"",
+      DoneTime:{}
+    },
+
+    timeScaleRange:["minute","hour","day","month"],
+    priorityRange:["vital","important","normal","casual"],
+    action:'',
+    showBox: false,
+    showDoneTime: false,
+    disabled:false,
+    micStatus: 'micOff'
+  },
+
+  /*
+  *以下为修改DDL详情的绑定函数 
+  */
+  contentChange(e){
+    this.ddl.content = e.value
+  },
+
+  dateChange_deadline(e){
+    var year = e.year.toString()
+    var mon = this.fillString(e.month+1)
+    var day = this.fillString(e.day)
+    this.ddl.deadline.date = year+"-"+mon+"-"+day
+  },
+  timeChange_deadline(e){
+    this.ddl.deadline.time = this.fillString(e.hour)+":"+this.fillString(e.minute)
+  },
+  dateChange_StartTime(e){
+    var year = e.year.toString()
+    var mon = this.fillString(e.month+1)
+    var day = this.fillString(e.day)
+    this.ddl.StartTime.date = year+"-"+mon+"-"+day
+  },
+  timeChange_StartTime(e){
+    this.ddl.StartTime.time = this.fillString(e.hour)+":"+this.fillString(e.minute)
+  },
+
+  scaleChange(e){
+    this.ddl.timeScale = e.newValue
+  },
+  priorityChange(e){
+    this.ddl.Priority = e.newValue
+  },
+  // 绑定Slider
+  progressChange(e){
+    this.ddl.Progress = e.progress
+  },
+  fillString(i){
+    //把时间字符串一位的填成两位
+    var s = i.toString()
+    if(s.length==1){
+      s='0'+s
+    }
+    return s
+  },
+  onInit() {
+    this.$on('detailBox',(evt)=>{
+      const show = evt.detail.showDetailBox
+      if(show){
+        console.log("show the",evt.detail.idx,"detailBox.")
+        this.show(evt)
+      }else{
+        //检查deadline合理性
+        if(!this.$app.$def.isFutureTime(this.ddl.deadline.date+" "+this.ddl.deadline.time)){
+          this.showHint("Deadline should be in the future!")
+        }
+        
+        if(JSON.stringify(this.ddl.DoneTime)=="{}"){
+          //UnfinishedList的details关闭时发送数据,更改DDL
+          console.log("Edit detailBox's idx:",this.idx)
+          this.$dispatch("editDDL",{ddl:this.ddl,idx:this.idx})
+        }else{
+          //finishedList的details关闭时不发送数据
+          console.log("not Edit",this.idx,"detailBox")
+        }
+        this.hide()
+      }
+    })
+  },
+  /**
+   * 没有我就自己定义的onShow和onHide
+   */
+  show(evt) {
+    this.showBox = true
+    this.idx = evt.detail.idx
+    this.ddl= evt.detail.ddl
+    if(evt.detail.type==2){
+      this.disabled=true
+    }
+    this.$app.$def.init()
+  },
+  hide() {
+    //Hide时重置内容
+    this.idx =''
+    this.ddl={
+      content:"",
+      deadline:{date:"",time:""},
+      timeScale: '',
+      Priority:"",
+      StartTime:{},
+      repeatRule:"",
+      Progress:"",  
+      Order:"",
+      DoneTime:{}
+    }
+    this.showBox= false,
+    this.showDoneTime= false,
+    this.disabled=false,
+    this.$app.$def.close()
+  },
+  
+  //计算Order排序值
+  computeOrder(deadline,timeScale,Priority){
+    time = (PresentTime() - deadline)/timeScale //还不够
+    Order = time/Priority
+  },
+  voiceOn(){
+    this.micStatus = 'micOn'
+    this.$app.$def.start()
+  },
+  voiceOff(){
+    this.micStatus = 'micOff'
+    const temp = this.$app.$def.stop()
+    console.log(temp)
+    this.ddl.content = this.ddl.content + temp
+  },
+  voiceSwitch(){
+    if(this.micStatus =="micOn"){
+      this.voiceOff()
+    }else if (this.micStatus =="micOff"){
+      this.voiceOn()
+    }else{
+      console.log("mic Status error!")
+    }
+  },
+  showHint (msg) {
+    prompt.showToast({ message: msg })
+  },
+}
+</script>
